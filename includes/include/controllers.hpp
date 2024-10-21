@@ -5,7 +5,8 @@
 #include <string>
 
 class memeController{
-    static Mix_Chunk *sound;
+    static Mix_Chunk *wavPtr;
+    static Mix_Music *sndPtr;
     static int lastPlayed;
     static int getChunkLength(Mix_Chunk *chunk, const char *path);
 public:

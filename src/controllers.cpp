@@ -3,7 +3,8 @@
 #include <random>
 #include <filesystem>
 
-Mix_Chunk *memeController::sound = nullptr;
+Mix_Chunk *memeController::wavPtr = nullptr;
+Mix_Music *memeController::sndPtr = nullptr;
 int memeController::lastPlayed = -1;
 std::vector<std::string> memeController::get(){
     std::vector<std::string> memeFiles;
@@ -18,14 +19,14 @@ int memeController::getChunkLength(Mix_Chunk *chunk, const char *path){
     SDL_AudioSpec wavSpec;
     Uint32 wavLength;
     Uint8 *wavBuffer;
-    if (SDL_LoadWAV(path, &wavSpec, &wavBuffer, &wavLength) == NULL) {
+    if(SDL_LoadWAV(path, &wavSpec, &wavBuffer, &wavLength) == NULL) {
         Mix_FreeChunk(chunk);
         return -1;
     }
 
     int lengthMs = (chunk->alen * 1000) / (wavSpec.freq * wavSpec.channels * (SDL_AUDIO_BITSIZE(wavSpec.format) / 8));
-
     SDL_FreeWAV(wavBuffer);
+
     return lengthMs;
 }
 int memeController::playMeme(){
@@ -34,18 +35,30 @@ int memeController::playMeme(){
     if(index == lastPlayed){
         index = index + 1 >= memeList.size() ? 0 : index + 1;
     }
-    sound = Mix_LoadWAV(memeList[index].c_str());
-    if(!sound){
+    const char *path = memeList[index].c_str();
+    size_t subStringExtStart = std::string(path).find_last_of('.');
+    std::string fileExt = std::string(path).substr(subStringExtStart + 1);
+    lastPlayed = index;
+    if(fileExt == "wav"){
+        wavPtr = Mix_LoadWAV(path);
+        if(!wavPtr){
+            SDL_Log("File error: %s", Mix_GetError());
+            return -1;
+        }
+        Mix_PlayChannel(-1, wavPtr, 0);
+        int length = getChunkLength(wavPtr, memeList[index].c_str());
+        return length;
+    }
+    sndPtr = Mix_LoadMUS(path);
+    if(!sndPtr){
         SDL_Log("File error: %s", Mix_GetError());
         return -1;
     }
-    Mix_PlayChannel(-1, sound, 0);
-    lastPlayed = index;
-    int length = getChunkLength(sound, memeList[index].c_str());
-    return length;
+    Mix_PlayMusic(sndPtr, 0);
+    return 0;
 }
 memeController::~memeController(){
-    Mix_FreeChunk(sound);
+    Mix_FreeChunk(wavPtr);
     SDL_Log("Exitting");
 }
 
