@@ -24,6 +24,7 @@
 
 void (*handleEvents)();
 void (*memeTime)();
+bool isRunning = true;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
     if(SDL_Init(SDL_INIT_AUDIO)){
@@ -48,8 +49,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     RNG::setSeed(high_resolution_clock::now().time_since_epoch().count());
     static steady_clock::time_point cycleStart(steady_clock::now()), cycleEnd, timeSinceMeme(cycleStart);
-    constinit static bool isRunning = true;
-    constinit static SDL_Event event;
+    static SDL_Event event;
     static size_t waitTime = RNG::intRange(RAND_MAX) / 10;
     
     handleEvents = []{

@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+extern bool isRunning;
+
 class memeController{
     static std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk*)> wavPtr;
     static std::unique_ptr<Mix_Music, void(*)(Mix_Music*)> sndPtr;

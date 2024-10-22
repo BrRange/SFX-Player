@@ -7,6 +7,11 @@ std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk*)> memeController::wavPtr(nullptr, 
 std::unique_ptr<Mix_Music, void(*)(Mix_Music*)> memeController::sndPtr(nullptr, &Mix_FreeMusic);
 int memeController::lastPlayed = -1;
 std::vector<std::string> memeController::get(){
+    if(!std::filesystem::exists("memes") || !std::filesystem::is_directory("memes")){
+        SDL_Log("\"Memes\" directory not found");
+        isRunning = false;
+        return {};
+    }
     std::vector<std::string> memeFiles;
     for(const std::filesystem::directory_entry& file : std::filesystem::directory_iterator("memes")){
         if(!file.is_directory()){
@@ -31,6 +36,9 @@ int memeController::getChunkLength(Mix_Chunk *chunk, const char *path){
 }
 int memeController::playMeme(){
     const std::vector<std::string> memeList = get();
+    if(memeList.size() == 0){
+        return -1;
+    }
     int index = RNG::intRange(memeList.size());
     if(index == lastPlayed){
         index = index + 1 >= memeList.size() ? 0 : index + 1;
