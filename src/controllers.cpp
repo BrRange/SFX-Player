@@ -3,8 +3,8 @@
 #include <random>
 #include <filesystem>
 
-Mix_Chunk *memeController::wavPtr = nullptr;
-Mix_Music *memeController::sndPtr = nullptr;
+std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk*)> memeController::wavPtr(nullptr, &Mix_FreeChunk);
+std::unique_ptr<Mix_Music, void(*)(Mix_Music*)> memeController::sndPtr(nullptr, &Mix_FreeMusic);
 int memeController::lastPlayed = -1;
 std::vector<std::string> memeController::get(){
     std::vector<std::string> memeFiles;
@@ -40,26 +40,22 @@ int memeController::playMeme(){
     std::string fileExt = std::string(path).substr(subStringExtStart + 1);
     lastPlayed = index;
     if(fileExt == "wav"){
-        wavPtr = Mix_LoadWAV(path);
+        wavPtr = std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk*)>(Mix_LoadWAV(path), &Mix_FreeChunk);
         if(!wavPtr){
             SDL_Log("File error: %s", Mix_GetError());
             return -1;
         }
-        Mix_PlayChannel(-1, wavPtr, 0);
-        int length = getChunkLength(wavPtr, memeList[index].c_str());
+        Mix_PlayChannel(-1, wavPtr.get(), 0);
+        int length = getChunkLength(wavPtr.get(), memeList[index].c_str());
         return length;
     }
-    sndPtr = Mix_LoadMUS(path);
+    sndPtr = std::unique_ptr<Mix_Music, void(*)(Mix_Music*)>(Mix_LoadMUS(path), &Mix_FreeMusic);
     if(!sndPtr){
         SDL_Log("File error: %s", Mix_GetError());
         return -1;
     }
-    Mix_PlayMusic(sndPtr, 0);
+    Mix_PlayMusic(sndPtr.get(), 0);
     return 0;
-}
-memeController::~memeController(){
-    Mix_FreeChunk(wavPtr);
-    SDL_Log("Exitting");
 }
 
 void RNG::setSeed(int seed){
