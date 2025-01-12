@@ -1,30 +1,33 @@
 #include "controllers.hpp"
 #include <fstream>
 #include <random>
-#include <filesystem>
 
-std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk*)> memeController::wavPtr(nullptr, &Mix_FreeChunk);
-std::unique_ptr<Mix_Music, void(*)(Mix_Music*)> memeController::sndPtr(nullptr, &Mix_FreeMusic);
-int memeController::lastPlayed = -1;
-std::vector<std::string> memeController::get(){
-    if(!std::filesystem::exists("memes") || !std::filesystem::is_directory("memes")){
-        SDL_Log("\"Memes\" directory not found");
+std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk *)> sfxController::wavPtr(nullptr, &Mix_FreeChunk);
+std::unique_ptr<Mix_Music, void(*)(Mix_Music *)> sfxController::sndPtr(nullptr, &Mix_FreeMusic);
+int sfxController::lastPlayed = -1;
+
+using namespace std::filesystem;
+
+std::vector<path> sfxController::get() {
+    if (!exists(path("sfxs")) || !is_directory("sfxs")) {
+        SDL_Log("\"sfxs\" directory not found, closing program.");
         isRunning = false;
         return {};
     }
-    std::vector<std::string> memeFiles;
-    for(const std::filesystem::directory_entry& file : std::filesystem::directory_iterator("memes")){
-        if(!file.is_directory()){
-            memeFiles.push_back(file.path().string());
+    std::vector<path> sfxFiles;
+    for (const directory_entry &file : directory_iterator("sfxs")) {
+        if (!file.is_directory()) {
+            sfxFiles.push_back(file.path());
         }
     }
-    return memeFiles;
+    return sfxFiles;
 }
-int memeController::getChunkLength(Mix_Chunk *chunk, const char *path){
+
+int sfxController::getChunkLength(Mix_Chunk *chunk, const char *path) {
     SDL_AudioSpec wavSpec;
     Uint32 wavLength;
     Uint8 *wavBuffer;
-    if(SDL_LoadWAV(path, &wavSpec, &wavBuffer, &wavLength) == NULL) {
+    if (SDL_LoadWAV(path, &wavSpec, &wavBuffer, &wavLength) == NULL) {
         Mix_FreeChunk(chunk);
         return -1;
     }
@@ -34,47 +37,40 @@ int memeController::getChunkLength(Mix_Chunk *chunk, const char *path){
 
     return lengthMs;
 }
-int memeController::playMeme(){
-    const std::vector<std::string> memeList = get();
-    if(memeList.size() == 0){
+
+int sfxController::playsfx() {
+    const std::vector<path> sfxList = get();
+    if (sfxList.size() == 0) {
+        SDL_Log("\"sfxs\" directory is empty, closing program.");
         return -1;
     }
-    int index = RNG::intRange(memeList.size());
-    if(index == lastPlayed){
-        index = index + 1 >= memeList.size() ? 0 : index + 1;
+
+    int index = RNG::intRange(sfxList.size());
+    if (index == lastPlayed) {
+        index = index + 1 >= sfxList.size() ? 0 : index + 1;
     }
-    const char *path = memeList[index].c_str();
-    size_t subStringExtStart = std::string(path).find_last_of('.');
-    std::string fileExt = std::string(path).substr(subStringExtStart + 1);
+
+    const path sfxPath = path(sfxList[index]);
+    const path sfxExt = sfxPath.extension();
     lastPlayed = index;
-    if(fileExt == "wav"){
-        wavPtr = std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk*)>(Mix_LoadWAV(path), &Mix_FreeChunk);
-        if(!wavPtr){
+
+    if (sfxExt == "wav") {
+        wavPtr = std::unique_ptr<Mix_Chunk, void(*)(Mix_Chunk *)>(Mix_LoadWAV(sfxPath.string().c_str()), &Mix_FreeChunk);
+        if (!wavPtr) {
             SDL_Log("File error: %s", Mix_GetError());
             return -1;
         }
         Mix_PlayChannel(-1, wavPtr.get(), 0);
-        int length = getChunkLength(wavPtr.get(), memeList[index].c_str());
+        int length = getChunkLength(wavPtr.get(), sfxList[index].string().c_str());
+        Mix_FreeChunk(wavPtr.get());
         return length;
     }
-    sndPtr = std::unique_ptr<Mix_Music, void(*)(Mix_Music*)>(Mix_LoadMUS(path), &Mix_FreeMusic);
-    if(!sndPtr){
+
+    sndPtr = std::unique_ptr<Mix_Music, void(*)(Mix_Music *)>(Mix_LoadMUS(sfxPath.string().c_str()), &Mix_FreeMusic);
+    if (!sndPtr) {
         SDL_Log("File error: %s", Mix_GetError());
         return -1;
     }
     Mix_PlayMusic(sndPtr.get(), 0);
-    return 0;
-}
-
-void RNG::setSeed(int seed){
-    std::srand(seed);
-}
-float RNG::range(){
-    return std::rand() / static_cast<float>(RAND_MAX);
-}
-int RNG::intRange(int max){
-    return range() * max;
-}
-int RNG::intRange(int min, int max){
-    return range() * (max - min) + min;
+    return 1000.0 * Mix_MusicDuration(sndPtr.get());
 }
