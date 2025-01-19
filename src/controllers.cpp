@@ -42,6 +42,7 @@ int sfxController::playsfx() {
     const std::vector<path> sfxList = get();
     if (sfxList.size() == 0) {
         SDL_Log("\"sfxs\" directory is empty, closing program.");
+        isRunning = false;
         return -1;
     }
 
@@ -62,7 +63,6 @@ int sfxController::playsfx() {
         }
         Mix_PlayChannel(-1, wavPtr.get(), 0);
         int length = getChunkLength(wavPtr.get(), sfxList[index].string().c_str());
-        Mix_FreeChunk(wavPtr.get());
         return length;
     }
 
@@ -73,4 +73,9 @@ int sfxController::playsfx() {
     }
     Mix_PlayMusic(sndPtr.get(), 0);
     return 1000.0 * Mix_MusicDuration(sndPtr.get());
+}
+
+void sfxController::freePtrs() {
+    Mix_FreeChunk(wavPtr.get());
+    Mix_FreeMusic(sndPtr.get());
 }

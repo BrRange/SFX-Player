@@ -37,7 +37,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         SDL_Quit();
         return 1;
     }
-
     if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 1024)) {
         SDL_Log("Audio error: %s", SDL_GetError());
         Mix_Quit();
@@ -60,14 +59,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 return;
             }
         }
-        };
+    };
     sfxTime = [] {
-            if (steady_clock::now() - timeSincesfx >= milliseconds(waitTime)) {
-                size_t checkNum = 10ull * RNG::intRange(RAND_MAX);
-                waitTime = sfxController::playsfx() + checkNum;
-                timeSincesfx = steady_clock::now();
-            }
-        };
+        if (steady_clock::now() - timeSincesfx >= milliseconds(waitTime)) {
+            sfxController::freePtrs();
+            size_t checkNum = 10ull * RNG::intRange(RAND_MAX);
+            waitTime = sfxController::playsfx() + checkNum;
+            timeSincesfx = steady_clock::now();
+        }
+    };
 
     while (isRunning) {
         cycleEnd = steady_clock::now();
