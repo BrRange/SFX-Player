@@ -17,7 +17,6 @@ class sfxController {
 public:
     static std::vector<std::filesystem::path> get();
     static int playsfx();
-    static void freePtrs();
 };
 
 namespace RNG {

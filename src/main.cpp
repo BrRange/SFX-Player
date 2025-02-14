@@ -5,8 +5,7 @@
 #include "SDL2/SDL_mixer.h"
 #include "controllers.hpp"
 
-#define DEBUG 0
-#if DEBUG
+#ifdef DEBUG
 constinit static size_t memoryCount = 0ull;
 void* operator new(size_t bytes) {
     SDL_Log("Allocating %i bytes", bytes);
@@ -62,7 +61,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     };
     sfxTime = [] {
         if (steady_clock::now() - timeSincesfx >= milliseconds(waitTime)) {
-            sfxController::freePtrs();
             size_t checkNum = 10ull * RNG::intRange(RAND_MAX);
             waitTime = sfxController::playsfx() + checkNum;
             timeSincesfx = steady_clock::now();

@@ -74,8 +74,3 @@ int sfxController::playsfx() {
     Mix_PlayMusic(sndPtr.get(), 0);
     return 1000.0 * Mix_MusicDuration(sndPtr.get());
 }
-
-void sfxController::freePtrs() {
-    Mix_FreeChunk(wavPtr.get());
-    Mix_FreeMusic(sndPtr.get());
-}
